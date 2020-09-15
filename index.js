@@ -11,6 +11,15 @@ const O = {
   css: "O"
 };
 
+const EMOTICONS = {
+  SAD: 0,
+  NORMAL: 1,
+  HAPPY: 2,
+  DEVIL: 3
+};
+
+let emoticon = EMOTICONS.NORMAL;
+
 const winCoords = [
   [[0, 0], [0, 1], [0, 2]],
   [[1, 0], [1, 1], [1, 2]],
@@ -59,6 +68,39 @@ function cpu() {
   if (opponentMove.move) {
     apply(gameBoard, opponentMove.move, O.value);
   }
+  if(opponentMove.stat.O > 0){
+    emoticon = EMOTICONS.NORMAL;
+  }
+  if(opponentMove.stat.O < opponentMove.stat.X){
+    emoticon = EMOTICONS.SAD;
+  }
+  if(opponentMove.stat.O > opponentMove.stat.X){
+    emoticon = EMOTICONS.HAPPY;
+  }
+  if(opponentMove.stat.O > 0 && opponentMove.stat.X === 0){
+    emoticon = EMOTICONS.DEVIL;
+  }
+  console.log(opponentMove.stat)
+}
+
+function showEmoticon() {
+  const $sad = $("#sad");
+  $sad.removeClass('active');
+  const $normal = $("#normal");
+  $normal.removeClass('active');
+  const $happy = $("#happy");
+  $happy.removeClass('active');
+  const $devil = $("#devil");
+  $devil.removeClass('active');
+  if (emoticon === EMOTICONS.SAD) {
+    $sad.addClass('active');
+  } else if (emoticon === EMOTICONS.NORMAL) {
+    $normal.addClass('active');
+  } else if (emoticon === EMOTICONS.HAPPY) {
+    $happy.addClass('active');
+  } else if (emoticon === EMOTICONS.DEVIL) {
+    $devil.addClass('active');
+  }
 }
 
 function draw() {
@@ -75,6 +117,7 @@ function draw() {
       }
     }
   }
+  showEmoticon();
 }
 
 function getAvailableMoves(board) {
@@ -95,51 +138,76 @@ function getAvailableMoves(board) {
   return availableMoves;
 }
 
+function evaluation(board) {
+  const value = evaluate(board);
+  return {
+    value: value,
+    stat: {
+      X: value === 1 ? 1 : 0,
+      O: value === -1 ? 1 : 0
+    }
+  };
+}
+
 function max(board) {
   const availableMoves = getAvailableMoves(board);
   if (availableMoves.length === 0) {
-    return {
-      value: evaluate(board)
-    };
+    return evaluation(board);
   }
   let current = -1;
   let max = -1;
+  let stat = {
+    X: 0, O: 0
+  };
   for (let m = 0; m < availableMoves.length; m++) {
     const nextBoard = copyBoard(board);
     apply(nextBoard, availableMoves[m], X.value);
     const opponentMove = min(nextBoard);
-    if (opponentMove.value > max) {
+    if (opponentMove.value >= max) {
       max = opponentMove.value;
       current = m;
     }
   }
+  if(max > 0){
+    stat.X = 1;
+  }else if(max < 0){
+    stat.O = 1;
+  }
   return {
     move: availableMoves[current],
-    value: max
+    value: max,
+    stat: stat
   };
 }
 
 function min(board) {
   const availableMoves = getAvailableMoves(board);
   if (availableMoves.length === 0) {
-    return {
-      value: evaluate(board)
-    };
+    return evaluation(board);
   }
   let current = -1;
   let min = +1;
+  let stat = {
+    X: 0, O: 0, EMPTY: 0
+  };
   for (let m = 0; m < availableMoves.length; m++) {
     const nextBoard = copyBoard(board);
     apply(nextBoard, availableMoves[m], O.value);
     const opponentMove = max(nextBoard);
-    if (opponentMove.value < min) {
+    if (opponentMove.value <= min) {
       min = opponentMove.value;
       current = m;
     }
   }
+  if(min > 0){
+    stat.X = 1;
+  }else if(min < 0){
+    stat.O = 1;
+  }
   return {
     move: availableMoves[current],
-    value: min
+    value: min,
+    stat: stat
   };
 }
 

@@ -16,3 +16,7 @@
 .box.O{
     background-image: url("o.png");
 }
+
+img:not(.active){
+    display: none;
+}
